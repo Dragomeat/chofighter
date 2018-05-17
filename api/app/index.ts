@@ -9,8 +9,12 @@ class Team {
 const team1 = new Team();
 const team2 = new Team();
 
+const getConnectionCount = () => {
+	return ['connectionCount', team1.connections.size, team2.connections.size];
+};
+
 const getState = (team: number = 1) => {
-	return [team, team1.score, team2.score];
+	return ['state', team, team1.score, team2.score];
 };
 
 const setTeam = (connectionId: string) => {
@@ -32,9 +36,21 @@ wss.on('connection', function(ws) {
 
 	ws.send(JSON.stringify(getState(ws.team)));
 
+    wss.clients.forEach(function(client) {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(getConnectionCount()));
+        }
+    });
+
 	ws.on('close', function() {
 		team1.connections.delete(connectionId);
 		team2.connections.delete(connectionId);
+
+        wss.clients.forEach(function(client) {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(getConnectionCount()));
+            }
+        });
 	});
 
 	ws.on('message', function(message) {
